@@ -1,4 +1,6 @@
 """Alembic environment configuration."""
+from app.database import Base
+from settings import settings
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
@@ -6,13 +8,11 @@ from alembic import context
 import sys
 from pathlib import Path
 
-# Add project root to path
+# Ensure project root is on sys.path BEFORE importing app modules
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-# Import settings and models
-from settings import settings
-from app.database import Base
-from app.models import User  # Import all models so Alembic can detect them
+# Now it's safe to import project modules
+from app import models  # noqa: F401  Ensure all models are imported for autogenerate
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -86,4 +86,3 @@ if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
-

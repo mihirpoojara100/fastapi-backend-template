@@ -1,24 +1,14 @@
 """User endpoints."""
+from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse, UserUpdate
-from passlib.context import CryptContext
+from app.utils.security import get_hash_password  # Import the function
 
 router = APIRouter()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
-def get_password_hash(password: str) -> str:
-    """Hash a password."""
-    return pwd_context.hash(password)
-
-
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password."""
-    return pwd_context.verify(plain_password, hashed_password)
 
 
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -34,13 +24,16 @@ async def create_user(user: UserCreate, db: Session = Depends(get_db)):
             detail="Email or username already registered"
         )
 
-    # Create new user
-    hashed_password = get_password_hash(user.password)
+    # Create new user with hashed password
+    hashed_password = get_hash_password(user.password)
+
     db_user = User(
+        id=uuid4(),
         email=user.email,
         username=user.username,
-        hashed_password=hashed_password
+        password=hashed_password
     )
+
     db.add(db_user)
     db.commit()
     db.refresh(db_user)

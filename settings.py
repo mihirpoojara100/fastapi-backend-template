@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     # Application
     APP_NAME: str = "FastAPI Backend"
     APP_VERSION: str = "1.0.0"
-    DEBUG: bool = False
+    DEBUG: bool = True
 
     # Database
     DATABASE_URL: str
