@@ -1,5 +1,5 @@
 """User endpoints."""
-from uuid import uuid4
+from uuid import uuid4, UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
@@ -48,7 +48,7 @@ async def get_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_d
 
 
 @router.get("/{user_id}", response_model=UserResponse)
-async def get_user(user_id: int, db: Session = Depends(get_db)):
+async def get_user(user_id: UUID, db: Session = Depends(get_db)):
     """Get a user by ID."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
@@ -61,7 +61,7 @@ async def get_user(user_id: int, db: Session = Depends(get_db)):
 
 @router.put("/{user_id}", response_model=UserResponse)
 async def update_user(
-    user_id: int,
+    user_id: UUID,
     user_update: UserUpdate,
     db: Session = Depends(get_db)
 ):
@@ -73,10 +73,17 @@ async def update_user(
             detail="User not found"
         )
 
-    # Update fields
-    update_data = user_update.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(user, field, value)
+    # Check for duplicate username
+    if user_update.username and user_update.username != user.username:
+        if db.query(User).filter(User.username == user_update.username).first():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username already registered"
+            )
+
+    # Update fields explicitly
+    if user_update.username is not None:
+        user.username = user_update.username
 
     db.commit()
     db.refresh(user)
@@ -84,7 +91,7 @@ async def update_user(
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_user(user_id: int, db: Session = Depends(get_db)):
+async def delete_user(user_id: UUID, db: Session = Depends(get_db)):
     """Delete a user."""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:

@@ -2,6 +2,7 @@
 from pydantic import BaseModel, EmailStr, ConfigDict
 from datetime import datetime
 from typing import Optional
+from uuid import UUID
 
 
 class UserBase(BaseModel):
@@ -17,18 +18,15 @@ class UserCreate(UserBase):
 
 class UserUpdate(BaseModel):
     """Schema for updating a user."""
-    email: Optional[EmailStr] = None
     username: Optional[str] = None
-    is_active: Optional[bool] = None
 
 
 class UserResponse(UserBase):
     """Schema for user response."""
-    id: int
+    id: UUID
     is_active: bool
     is_superuser: bool
     created_at: datetime
     updated_at: Optional[datetime] = None
-    
-    model_config = ConfigDict(from_attributes=True)
 
+    model_config = ConfigDict(from_attributes=True)
